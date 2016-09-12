@@ -25,6 +25,7 @@
 #include <termios.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <signal.h>
 #include <ctype.h>
 #include <iostream>
