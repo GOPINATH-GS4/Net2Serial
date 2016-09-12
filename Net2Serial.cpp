@@ -56,6 +56,7 @@ Net2Serial::Net2Serial(int port, int backlog, char *serialPort, int baudRate) {
     this->msgs = new Messages();
     this->port = port;
     this->backlog = backlog;
+
     this->serialFd = open(serialPort, O_RDWR | O_NOCTTY | O_NONBLOCK);
     if (this->serialFd < 0) {
         printf("Error opening file ... %s\n", sys_errlist[errno]);
@@ -65,8 +66,19 @@ Net2Serial::Net2Serial(int port, int backlog, char *serialPort, int baudRate) {
         printf("Unable to set baudrate to %d\n", baudRate);
         exit(1);
     }
+    setSigChild();
 }
 
+void Net2Serial::setSigChild() {
+    struct sigaction sa;
+    sa.sa_handler = &handle_sigchld;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+    if (sigaction(SIGCHLD, &sa, 0) == -1) {
+        perror(0);
+        exit(1);
+    }
+}
 void Net2Serial::Run() {
 
     int client_fd;
@@ -130,6 +142,13 @@ bool Net2Serial::SetNonBlocking(int fd) {
     flags = flags | O_NONBLOCK;
     return (fcntl(fd, F_SETFL, flags) == 0) ? true : false;
 
+}
+void Net2Serial::handle_sigchld(int sig) {
+    printf("SigChild ....\n");
+    int saved_errno = errno;
+    setSigChild();
+    while (waitpid((pid_t)(-1), 0, WNOHANG) > 0) {}
+    errno = saved_errno;
 }
 
 Messages *Net2Serial::getMessages() {

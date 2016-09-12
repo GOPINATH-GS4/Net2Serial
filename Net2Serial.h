@@ -46,6 +46,8 @@ private:
     void ProcessRequest(int);
     bool SetNonBlocking(int);
     bool setBaudRate(int fd, int speed);
+    static void setSigChild();
+    static  void handle_sigchld(int sig);
 
 public:
 
