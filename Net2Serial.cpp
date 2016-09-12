@@ -7,16 +7,16 @@
 bool Net2Serial::setBaudRate(int fd, int speed) {
     struct termios tty;
 
-    memset (&tty, 0, sizeof tty);
+    memset(&tty, 0, sizeof tty);
 
-    if (tcgetattr (fd, &tty) != 0) {
+    if (tcgetattr(fd, &tty) != 0) {
         printf("tcgetattr %s\n", sys_errlist[errno]);
         return false;
     }
 
 
-    cfsetospeed (&tty, speed);
-    cfsetispeed (&tty, speed);
+    cfsetospeed(&tty, speed);
+    cfsetispeed(&tty, speed);
 
     /* Needed for ROOMBA Serial communication from create open interface documentation
      Data bits: 8
@@ -35,25 +35,63 @@ bool Net2Serial::setBaudRate(int fd, int speed) {
     tty.c_cflag &= ~CRTSCTS;
     tty.c_iflag &= ~(IXON | IXOFF | IXANY);           // disable XON XOFF (for transmit and receive)
     tty.c_cflag &= ~CSIZE;
-    /* tty.c_cflag &= ~CSIZE;         Mask the character size bits
-     tty.c_cflag &= ~CRTSCTS;     disable hardware flow control
-     tty.c_iflag &= ~(IXON | IXOFF | IXANY);           // disable XON XOFF (for transmit and receive)
-     //tty.c_cflag |= CRTSCTS;       enable hardware flow control */
-
     tty.c_cc[VMIN] = 1;     //min carachters to be read
     tty.c_cc[VTIME] = 0;    //Time to wait for data (tenths of seconds)
 
     //Set the new options for the port...
 
-    if(tcsetattr(fd, TCSANOW, &tty) != 0) {
+    if (tcsetattr(fd, TCSANOW, &tty) != 0) {
         printf("tcgetattr %s\n", sys_errlist[errno]);
         return false;
 
     }
     return true;
 }
+
+void Net2Serial::sendMessage(char *host, int port, char *message) {
+
+    int sockfd, n;
+    struct sockaddr_in serv_addr;
+    struct hostent *server;
+
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (sockfd < 0) {
+        perror("ERROR opening socket");
+        exit(1);
+    }
+
+    server = gethostbyname(host);
+
+    if (server == NULL) {
+        fprintf(stderr, "ERROR, no such host\n");
+        exit(0);
+    }
+
+    bzero((char *) &serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    bcopy(server->h_addr, (char *) &serv_addr.sin_addr.s_addr, server->h_length);
+    serv_addr.sin_port = htons(port);
+
+    /* Now connect to the server */
+    if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+        perror("ERROR connecting");
+        exit(1);
+    }
+    int flags = fcntl(sockfd, F_GETFL, 0);
+
+    flags = flags | O_NONBLOCK;
+    fcntl(sockfd, F_SETFL, flags);
+
+    if (write(sockfd, message, strlen(message)) < 0) {
+        perror("ERROR writing to socket");
+        exit(1);
+    }
+    close(sockfd);
+    return;
+}
 Net2Serial::Net2Serial(int port, int backlog, char *serialPort, int baudRate) {
-    this->msgs = new Messages();
     this->port = port;
     this->backlog = backlog;
 
@@ -62,10 +100,11 @@ Net2Serial::Net2Serial(int port, int backlog, char *serialPort, int baudRate) {
         printf("Error opening file ... %s\n", sys_errlist[errno]);
         exit(1);
     }
-    if(!this->setBaudRate(this->serialFd, baudRate)) {
+    if (!this->setBaudRate(this->serialFd, baudRate)) {
         printf("Unable to set baudrate to %d\n", baudRate);
         exit(1);
     }
+
     setSigChild();
 }
 
@@ -79,7 +118,9 @@ void Net2Serial::setSigChild() {
         exit(1);
     }
 }
-void Net2Serial::Run() {
+
+
+void Net2Serial::Run(void (*f)(char *)) {
 
     int client_fd;
     socklen_t clilen;
@@ -125,9 +166,15 @@ void Net2Serial::Run() {
         if (pid == 0) {
             close(sockfd);
             SetNonBlocking(client_fd);
-            ProcessRequest(client_fd);
-            std::cout << "Server closing client socket " << std::endl;
+            char *buffer = ProcessRequest(client_fd);
+            if(write(this->serialFd, buffer, strlen(buffer) < strlen(buffer)) {
+                perror("write");
+                f((char *) sys_errlist[errno]);
+                exit(1);
+            }
+            printf("Buffer = %s\n", buffer);
             close(client_fd);
+            f(buffer);
             exit(0);
         }
 
@@ -143,19 +190,16 @@ bool Net2Serial::SetNonBlocking(int fd) {
     return (fcntl(fd, F_SETFL, flags) == 0) ? true : false;
 
 }
+
 void Net2Serial::handle_sigchld(int sig) {
     printf("SigChild ....\n");
     int saved_errno = errno;
     setSigChild();
-    while (waitpid((pid_t)(-1), 0, WNOHANG) > 0) {}
+    while (waitpid((pid_t) (-1), 0, WNOHANG) > 0) {}
     errno = saved_errno;
 }
 
-Messages *Net2Serial::getMessages() {
-    return this->msgs;
-}
-
-void Net2Serial::ProcessRequest(int sockfd) {
+char *Net2Serial::ProcessRequest(int sockfd) {
 
     fd_set readfds;
     struct timeval tv;
@@ -172,6 +216,7 @@ void Net2Serial::ProcessRequest(int sockfd) {
 
     tv.tv_sec = 5;
     tv.tv_usec = .5;
+
     index = 0;
     ret = select(n, &readfds, NULL, NULL, &tv);
 
@@ -184,7 +229,10 @@ void Net2Serial::ProcessRequest(int sockfd) {
 
         if (FD_ISSET(sockfd, &readfds)) {
             int n = 0;
-            while ((n = read(sockfd, &c, 1)) > 0 && c != 10 && c != 13) {
+
+            printf("Reading .... \n");
+
+            while ((n = read(sockfd, &c, 1)) > 0) {
                 printf("%d %d\n", c, n);
                 buffer[index] = c;
                 index++;
@@ -192,5 +240,7 @@ void Net2Serial::ProcessRequest(int sockfd) {
             buffer[index] = 0x00;
         }
     }
-    this->msgs->ParseMessage(buffer);
+    //printf("Buffer %s\n", buffer);
+    close(sockfd);
+    return buffer;
 }

@@ -17,7 +17,6 @@
 #include <sys/fcntl.h>
 #include <iostream>
 #include <stdio.h>
-#include <unordered_map>
 #include <array>
 #include <string>
 #include <unistd.h>
@@ -43,18 +42,17 @@ private:
     int  port = 5001;
     int  backlog = 10;
     int  serialFd = -1;
-    Messages *msgs;
-    void ProcessRequest(int);
+    char *ProcessRequest(int);
     bool SetNonBlocking(int);
     bool setBaudRate(int fd, int speed);
     static void setSigChild();
-    static  void handle_sigchld(int sig);
+    static void handle_sigchld(int sig);
 
 public:
 
     Net2Serial(int port, int backlog, char *serialPort, int baudRate);
-    void Run();
-    Messages *getMessages();
+    void Run(void (*f)(char *));
+    static void sendMessage(char *host, int port, char *message);
 
 };
 
