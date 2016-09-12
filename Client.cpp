@@ -38,9 +38,10 @@ int main(int argc, char *argv[]) {
     }
     Messages *msg = new Messages();
 
-    msg->addMessage("Hello World");
-    msg->addMessage("Merck & Co");
-    msg->addMessage("1234567890");
+    msg->addMessage("F");
+    sleep(10);
+    msg->addMessage("S");
+    //msg->addMessage("1234567890");
 
     for (int i = 0; i < msg->size(); i++) {
         /* Send message to the server */
