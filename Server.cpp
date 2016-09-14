@@ -7,7 +7,7 @@ void eventhandler(char *msg) {
 
 int main() {
 
-    Net2Serial *net = new Net2Serial(12345, 10, "/dev/ttyUSB0" , 100);
+    Net2Serial *net = new Net2Serial(12345, 10, "/dev/ttyUSB0" , B115200);
     net->Run(eventhandler);
     return 0;
 }

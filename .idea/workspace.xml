@@ -17,9 +17,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c071ff3f-4910-481c-abbf-4d9c95bb36e3" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Client.cpp" afterPath="$PROJECT_DIR$/Client.cpp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Net2Serial.cpp" afterPath="$PROJECT_DIR$/Net2Serial.cpp" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Server.cpp" afterPath="$PROJECT_DIR$/Server.cpp" />
     </list>
     <ignored path="openwrt.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -49,11 +47,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Server.cpp" pinned="false" current-in-tab="false">
+      <file leaf-file-name="Server.cpp" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Server.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="180">
-              <caret line="12" column="1" selection-start-line="12" selection-start-column="1" selection-end-line="12" selection-end-column="1" />
+            <state relative-caret-position="135">
+              <caret line="9" column="46" selection-start-line="9" selection-start-column="46" selection-end-line="9" selection-end-column="46" />
               <folding />
             </state>
           </provider>
@@ -89,10 +87,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Net2Serial.cpp" pinned="false" current-in-tab="true">
+      <file leaf-file-name="Net2Serial.cpp" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Net2Serial.cpp">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1500">
+            <state relative-caret-position="3585">
               <caret line="239" column="33" selection-start-line="239" selection-start-column="33" selection-end-line="239" selection-end-column="33" />
               <folding />
             </state>
@@ -134,9 +132,9 @@
         <option value="$PROJECT_DIR$/Messages.cpp" />
         <option value="$PROJECT_DIR$/CMakeLists.txt" />
         <option value="$PROJECT_DIR$/Net2Serial.h" />
-        <option value="$PROJECT_DIR$/Server.cpp" />
         <option value="$PROJECT_DIR$/Net2Serial.cpp" />
         <option value="$PROJECT_DIR$/Client.cpp" />
+        <option value="$PROJECT_DIR$/Server.cpp" />
       </list>
     </option>
   </component>
@@ -435,12 +433,12 @@
       <workItem from="1473706088464" duration="61000" />
       <workItem from="1473776762863" duration="133000" />
       <workItem from="1473791570390" duration="170000" />
-      <workItem from="1473848409836" duration="1224000" />
+      <workItem from="1473848409836" duration="1496000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="30715000" />
+    <option name="totallyTimeSpent" value="30987000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="20" y="43" width="1400" height="790" extended-state="0" />
@@ -800,14 +798,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Server.cpp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
-          <caret line="12" column="1" selection-start-line="12" selection-start-column="1" selection-end-line="12" selection-end-column="1" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Net2Serial.h">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="126">
@@ -828,8 +818,16 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Net2Serial.cpp">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1500">
+        <state relative-caret-position="3585">
           <caret line="239" column="33" selection-start-line="239" selection-start-column="33" selection-end-line="239" selection-end-column="33" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Server.cpp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="135">
+          <caret line="9" column="46" selection-start-line="9" selection-start-column="46" selection-end-line="9" selection-end-column="46" />
           <folding />
         </state>
       </provider>
