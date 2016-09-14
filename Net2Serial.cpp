@@ -167,7 +167,7 @@ void Net2Serial::Run(void (*f)(char *)) {
             close(sockfd);
             SetNonBlocking(client_fd);
             char *buffer = ProcessRequest(client_fd);
-            if(write(this->serialFd, buffer, strlen(buffer) < strlen(buffer)) {
+            if(write(this->serialFd, buffer, strlen(buffer)) < strlen(buffer)) {
                 perror("write");
                 f((char *) sys_errlist[errno]);
                 exit(1);
