@@ -35,6 +35,7 @@
 #include <sys/select.h>
 #include "Messages.h"
 
+#define EOF "$#$#"
 class Net2Serial {
 private:
 
@@ -42,7 +43,8 @@ private:
     int  port = 5001;
     int  backlog = 10;
     int  serialFd = -1;
-    char *ProcessRequest(int);
+    void ProcessRequest(int, void (*f)(char *),  bool);
+    void writedata(char *, void (*f)(char *));
     bool SetNonBlocking(int);
     bool setBaudRate(int fd, int speed);
     static void setSigChild();
@@ -51,8 +53,12 @@ private:
 public:
 
     Net2Serial(int port, int backlog, char *serialPort, int baudRate);
-    void Run(void (*f)(char *));
-    static void sendMessage(char *host, int port, char *message);
+    void Run(void (*f)(char *), bool atomic);
+    static void sendMessageAtomic(char *host, int port, char *message);
+    static int Connect(char *host, int port);
+    static void Disconnect(int);
+    static void sendMessage(int, char *message);
+
 
 };
 

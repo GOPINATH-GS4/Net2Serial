@@ -48,7 +48,7 @@ bool Net2Serial::setBaudRate(int fd, int speed) {
     return true;
 }
 
-void Net2Serial::sendMessage(char *host, int port, char *message) {
+void Net2Serial::sendMessageAtomic(char *host, int port, char *message) {
 
     int sockfd, n;
     struct sockaddr_in serv_addr;
@@ -68,7 +68,6 @@ void Net2Serial::sendMessage(char *host, int port, char *message) {
         fprintf(stderr, "ERROR, no such host\n");
         exit(0);
     }
-
     bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     bcopy(server->h_addr, (char *) &serv_addr.sin_addr.s_addr, server->h_length);
@@ -91,6 +90,56 @@ void Net2Serial::sendMessage(char *host, int port, char *message) {
     close(sockfd);
     return;
 }
+int Net2Serial::Connect(char *host, int port) {
+
+    int sockfd, n;
+    struct sockaddr_in serv_addr;
+    struct hostent *server;
+
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (sockfd < 0) {
+        perror("ERROR opening socket");
+        exit(1);
+    }
+
+    server = gethostbyname(host);
+
+    if (server == NULL) {
+        fprintf(stderr, "ERROR, no such host\n");
+        exit(0);
+    }
+    bzero((char *) &serv_addr, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    bcopy(server->h_addr, (char *) &serv_addr.sin_addr.s_addr, server->h_length);
+    serv_addr.sin_port = htons(port);
+
+    /* Now connect to the server */
+    if (connect(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+        perror("ERROR connecting");
+        exit(1);
+    }
+    int flags = fcntl(sockfd, F_GETFL, 0);
+
+    flags = flags | O_NONBLOCK;
+    fcntl(sockfd, F_SETFL, flags);
+
+    return sockfd;
+}
+void Net2Serial::sendMessage(int sockfd, char *message) {
+
+        if (write(sockfd, message, strlen(message)) < 0) {
+            perror("ERROR writing to socket");
+            exit(1);
+        }
+        //close(sockfd);
+        return;
+}
+void Net2Serial::Disconnect(int sockfd) {
+    close(sockfd);
+}
+
 Net2Serial::Net2Serial(int port, int backlog, char *serialPort, int baudRate) {
     this->port = port;
     this->backlog = backlog;
@@ -120,7 +169,7 @@ void Net2Serial::setSigChild() {
 }
 
 
-void Net2Serial::Run(void (*f)(char *)) {
+void Net2Serial::Run(void (*f)(char *), bool atomic) {
 
     int client_fd;
     socklen_t clilen;
@@ -166,15 +215,8 @@ void Net2Serial::Run(void (*f)(char *)) {
         if (pid == 0) {
             close(sockfd);
             SetNonBlocking(client_fd);
-            char *buffer = ProcessRequest(client_fd);
-            if(write(this->serialFd, buffer, strlen(buffer)) < strlen(buffer)) {
-                perror("write");
-                f((char *) sys_errlist[errno]);
-                exit(1);
-            }
-            printf("Buffer = %s\n", buffer);
+            ProcessRequest(client_fd, f, atomic);
             close(client_fd);
-            f(buffer);
             exit(0);
         }
 
@@ -190,7 +232,15 @@ bool Net2Serial::SetNonBlocking(int fd) {
     return (fcntl(fd, F_SETFL, flags) == 0) ? true : false;
 
 }
-
+void Net2Serial::writedata(char *buffer, void (*f)(char *)) {
+    if(write(this->serialFd, buffer, strlen(buffer)) < strlen(buffer)) {
+        perror("write");
+        f((char *) sys_errlist[errno]);
+        exit(1);
+    }
+    printf("Buffer = %s\n", buffer);
+    f(buffer);
+}
 void Net2Serial::handle_sigchld(int sig) {
     printf("SigChild ....\n");
     int saved_errno = errno;
@@ -199,7 +249,7 @@ void Net2Serial::handle_sigchld(int sig) {
     errno = saved_errno;
 }
 
-char *Net2Serial::ProcessRequest(int sockfd) {
+void Net2Serial::ProcessRequest(int sockfd, void (*f)(char *), bool atomic) {
 
     fd_set readfds;
     struct timeval tv;
@@ -231,16 +281,22 @@ char *Net2Serial::ProcessRequest(int sockfd) {
             int n = 0;
 
             printf("Reading .... \n");
+            do {
+                while ((n = read(sockfd, &c, 1)) > 0) {
+                   //printf("%d %d\n", c, n);
+                    buffer[index] = c;
+                    if (n == -1 || c == 10 || c == 13) break;
+                    index++;
+                }
+                buffer[index] = 0x00;
+                if (index) printf("Writing... %s\n", buffer);
+                index = 0;
+                if(strcmp(buffer, EOF) == 0) break;
+                this->writedata(buffer, f);
+            } while(!atomic);
 
-            while ((n = read(sockfd, &c, 1)) > 0) {
-                printf("%d %d\n", c, n);
-                buffer[index] = c;
-                index++;
-            }
-            buffer[index] = 0x00;
         }
     }
     //printf("Buffer %s\n", buffer);
     close(sockfd);
-    return buffer;
 }
